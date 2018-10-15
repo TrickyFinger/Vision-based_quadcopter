@@ -4,9 +4,6 @@ Commands need to be adjusted:
 2. pin and interrupt No. of mode_Switch
 */
 
-/*______________________________CHANGE LOG______________________________________
-August 5, 2018    Main frame finished
-*/
 
 #include <Servo.h>
 
@@ -29,18 +26,18 @@ unsigned long INRUD;
 int OUTAIL;
 int OUTELE;
 int OUTRUD;
-int OUT_Motion[3] = {OUTAIL, OUTELE, OUTRUD};
+int OUT_Motion[3] = {OUTAIL, OUTELE, OUTRUD};  //define the output
 
 char buffer[4];
 char stopSign = ',';
 bool stringComplete = false;
 
-int AILCenter = 1500;
+int AILCenter = 1500;      //define center PWM value
 int ELECenter = 1500;
 int RUDCenter = 1500;
 int Center_Val[3] = {AILCenter, ELECenter, RUDCenter};
 
-int mode = 1;
+int mode = 1;           //mode definition
 
 Servo AIL;
 Servo ELE;
@@ -54,36 +51,24 @@ void setup()
     pinMode(RUD4, INPUT);
     pinMode(mode_Switch, INTPUT);
 
-    attachInterrupt(ChangeMode, 0, CHANGE);  //$$
-
+    attachInterrupt(ChangeMode, 0, CHANGE);  //interruption of mode changing, once triggered, go into the function 'ChangeMode'
 
     AIL.attach(8);
     ELE.attach(9);
     RUD.attach(10);
-
     Serial.begin(9600);
 }
 
 
-
-
-
 void loop()
 {
-    if(mode == 1)
+    if(mode == 1)  //manual mode
     {
-        INAIL = pulseIn(AIL1, HIGH);
+        INAIL = pulseIn(AIL1, HIGH);    //function 'pulseIn' can read the PWM value of the input
         INELE = pulseIn(ELE2, HIGH);
         INRUD = pulseIn(RUD4, HIGH);
 
-      /*
-        OUTAIL = map(INAIL,1010,2007,47,144);
-        OUTELE = map(INELE,1010,2007,47,144);
-        OUTTHR = map(INTHR,1010,2007,47,144);
-        OUTRUD = map(INRUD,1010,2007,47,144);
-        */
-
-        AIL.writeMicroseconds(INAIL);
+        AIL.writeMicroseconds(INAIL);   //output the same PWM value through the output pins
         ELE.writeMicroseconds(INELE);
         RUD.writeMicroseconds(INRUD);
 
@@ -99,14 +84,15 @@ void loop()
         delay(2);
     }
 
-    if(mode == 2)
+    if(mode == 2)   //auto mode
     {
         if (stringComplete)
         {
             Serial.println(inputString);
             buffer= "";
             stringComplete = false;
-            for(i=0;i<4;i++)
+//inside this 'for loop', output PWM are calculated accroding to the command from serial
+            for(i=0;i<7;i=i+2)
             {
                 if(buffer[i] == '0')
                 {
@@ -114,22 +100,21 @@ void loop()
                 }
                 else if(buffer[i] == '1')
                 {
-                    OUT_Motion[i] = Center_Val[i] + 100;
+                     Center_Val[i] + 100;
                 }
                 else
                 {
                     OUT_Motion[i] = Center_Val[i] - 100;
                 }
             }
-            THR.writeMicroseconds(OUT_Motion[0]);
-            AIL.writeMicroseconds(OUT_Motion[1]);
-            ELE.writeMicroseconds(OUT_Motion[2]);
-            RUD.writeMicroseconds(OUT_Motion[3]);
+            AIL.writeMicroseconds(OUT_Motion[0]);
+            ELE.writeMicroseconds(OUT_Motion[1]);
+            RUD.writeMicroseconds(OUT_Motion[2]);
         }
     }
 }
 
-
+/*
 void AutoMode()
 {
     if(Serial.available() > 0)
@@ -188,7 +173,7 @@ void AutoMode()
         }
         RUD.writeMicroseconds(OUTRUD);
 
-/*      another way
+      another way
         for(i=0;i<4;i++)
         {
             if(buffer[i] == '0')
@@ -208,7 +193,7 @@ void AutoMode()
         AIL.writeMicroseconds(OUT_Motion[1]);
         ELE.writeMicroseconds(OUT_Motion[2]);
         RUD.writeMicroseconds(OUT_Motion[3]);
-*/
+
     }
     if(Serial.available == 0)
     {
@@ -218,7 +203,7 @@ void AutoMode()
         RUD.writeMicroseconds(Center_Val[3]);
     }
 }
-
+*/
 
 void ChangeMode()
 {
@@ -226,11 +211,12 @@ void ChangeMode()
 }
 
 
-void serialEvent() {
+void serialEvent()    //read data from the serial, this function will automatically run after each loop
+{
     while (Serial.available())
     {
-        inPutNum = Serial.readBytesUntil(stopSign, buffer, 4);
-        if (inPutNum[3] == '\n')
+        inPutNum = Serial.readBytesUntil(stopSign, buffer, 7);
+        if (inPutNum[6] == ',')
         {
             stringComplete = true;
         }
